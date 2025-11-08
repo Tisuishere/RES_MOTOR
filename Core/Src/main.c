@@ -52,7 +52,7 @@ UART_HandleTypeDef huart1;
 uint32_t adcBuffer[ADC_FILTER_SIZE] = { 0 };
 uint8_t adcIndex = 0;
 uint32_t adcVal;
-uint32_t lastAdcVal = 0;
+uint32_t lastAdcVal;
 uint32_t threshold = 20;
 uint16_t step_need = 0;
 uint16_t step_run = 0;
@@ -109,7 +109,13 @@ int main(void) {
 	MX_USART1_UART_Init();
 	/* USER CODE BEGIN 2 */
 //  HAL_ADC_Start_IT(&hadc1);
-	HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+//	HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+//	HAL_ADC_Start(&hadc1);
+//	if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK) {
+//		lastAdcVal = HAL_ADC_GetValue(&hadc1);
+//	}
+//	HAL_ADC_Stop(&hadc1);
+	HAL_ADC_Start_IT(&hadc1);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -127,7 +133,7 @@ int main(void) {
 //	  HAL_UART_Transmit(&huart1, (uint8_t *)buffer_adc, length, 1000);
 //	  HAL_Delay(1000);
 //	  read_ADC();
-		control();
+//		control();
 	}
 	/* USER CODE END 3 */
 }
@@ -353,55 +359,57 @@ void printf_uart(const char *mess) {
 }
 void read_ADC() {
 	HAL_ADC_Start(&hadc1);
-	HAL_ADC_PollForConversion(&hadc1, 1000);
-		uint32_t newVal = HAL_ADC_GetValue(&hadc1);
-		HAL_ADC_Stop(&hadc1);
-
-		adcBuffer[adcIndex] = newVal;
-		adcIndex = (adcIndex + 1) % ADC_FILTER_SIZE;
-
-		uint32_t sum = 0;
-		for (uint8_t i = 0; i < ADC_FILTER_SIZE; i++) {
-			sum += adcBuffer[i];
-		}
-		adcVal = sum / ADC_FILTER_SIZE;
-
-}
-
-void control() {
-	read_ADC();
-	if ((adcVal > lastAdcVal + threshold)
-			|| (adcVal < lastAdcVal - threshold)) {
-		lastAdcVal = adcVal;
-
-		char buffer_adc[50];
-		int length = snprintf(buffer_adc, sizeof(buffer_adc),
-				"ADC value: %lu\r\n", adcVal);
-		HAL_UART_Transmit(&huart1, (uint8_t*) buffer_adc, length, 1000);
-
-		if (step_curr == 0) {
-			printf_uart("ok\n");
-			step_need = adcVal * 200 / 4036;
-			HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
-		} else {
-			step_new = adcVal * 200 / 4036;
-			if (step_curr > step_new) {
-				printf_uart("ok1\n");
-				step_need = step_curr - step_new;
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET); // ngược
-				HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
-
-			} else if (step_curr < step_new) {
-				printf_uart("ok2\n");
-				step_need = step_new - step_curr;
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);   //  thuận
-				HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
-			} else {
-				// Không thay đổi vị trí
-			}
-		}
+	if (HAL_ADC_PollForConversion(&hadc1, 100) == HAL_OK) {
+		lastAdcVal = HAL_ADC_GetValue(&hadc1);
 	}
+//	uint32_t newVal = HAL_ADC_GetValue(&hadc1);
+//	HAL_ADC_Stop(&hadc1);
+//
+//	adcBuffer[adcIndex] = newVal;
+//	adcIndex = (adcIndex + 1) % ADC_FILTER_SIZE;
+//
+//	uint32_t sum = 0;
+//	for (uint8_t i = 0; i < ADC_FILTER_SIZE; i++) {
+//		sum += adcBuffer[i];
+//	}
+//	adcVal = sum / ADC_FILTER_SIZE;
 }
+
+//void control() {
+//	read_ADC();
+//	if (adcVal > abs(lastAdcVal - threshold)){
+////			|| (adcVal < lastAdcVal - threshold)) {
+//		lastAdcVal = adcVal;
+//
+////		char buffer_adc[50];
+////		int length = snprintf(buffer_adc, sizeof(buffer_adc),
+////				"ADC value: %lu\r\n", adcVal);
+////		HAL_UART_Transmit(&huart1, (uint8_t*) buffer_adc, length, 1000);
+////
+////		if (step_curr == 0) {
+////			printf_uart("ok\n");
+//			step_need = adcVal * 200 / 4036;
+//
+//			HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+//		} else {
+//			step_new = adcVal * 200 / 4036;
+//			if (step_curr > step_new) {
+////				printf_uart("ok1\n");
+//				step_need = step_curr - step_new;
+//				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET); // ngược
+//				HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+//
+//			} else if (step_curr < step_new) {
+////				printf_uart("ok2\n");
+//				step_need = step_new - step_curr;
+//				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);   //  thuận
+//				HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+//			} else {
+//				// Không thay đổi vị trí
+//			}
+//		}
+//	}
+//}
 
 //void control(){
 //	read_ADC();
@@ -437,57 +445,57 @@ void control() {
 //		  //	  HAL_Delay(1000);
 //}
 
-//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-//{
-//  if (hadc->Instance == ADC1)
-//  {
-//	  // nên xử lí thêm nhiễu qua threhold ?
-//	  adcVal = HAL_ADC_GetValue(&hadc1);
-////	  if ((adcVal > lastAdcVal + threshold) || (adcVal < lastAdcVal - threshold))
-////	          {
-//	              lastAdcVal = adcVal; // cập nhật lại giá trị cũ
-//	              char buffer_adc[50];
-//	              int length = snprintf(buffer_adc, sizeof(buffer_adc), "adc_value: %lu \r\n", lastAdcVal);
-//	  			  HAL_UART_Transmit(&huart1, (uint8_t *)buffer_adc, length, 1000);
-////	          }
-//	  if (step_curr == 0){
-//		  printf_uart("ok");
-//		  step_need = adcVal*200/4036;
-//		  char ste_buff_need[50];
-//		  int length1 = snprintf(ste_buff_need, sizeof(ste_buff_need), "ste_need_value: %lu \r\n", step_need);
-//		  HAL_UART_Transmit(&huart1, (uint8_t *)ste_buff_need, length1, 1000);
-//		  HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
-//	  }
-//	  else
-//		  step_new = adcVal*200/4036;
-//
-//	  if (step_curr > step_new){
-//		  printf_uart("ok1");
-//		  step_need = step_curr - step_new;
-//		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
-////		  HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
-//	  }
-//	  else if (step_curr < step_new){
-//		  printf_uart("ok2");
-//		  step_need = step_new - step_curr;
-//		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
-////		  HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
-//	  }
-//	  else {
-//		  // vì timer dừng sẵn nên đã kh quay -> kh cần disable
-////		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-//	  }
-//	  lastAdcVal = adcVal;
-//
-////	  HAL_Delay(1000);
-////	  HAL_ADC_Start_IT(&hadc1);
-//  }
-//}
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+	if (hadc->Instance == ADC1) {
+		// nên xử lí thêm nhiễu qua threhold ?
+		adcVal = HAL_ADC_GetValue(&hadc1);
+//	  if ((adcVal > lastAdcVal + threshold) || (adcVal < lastAdcVal - threshold))
+//	          {
+		lastAdcVal = adcVal; // cập nhật lại giá trị cũ
+		char buffer_adc[50];
+		int length = snprintf(buffer_adc, sizeof(buffer_adc),
+				"adc_value: %lu \r\n", lastAdcVal);
+		HAL_UART_Transmit(&huart1, (uint8_t*) buffer_adc, length, 1000);
+//	          }
+		if (step_curr == 0) {
+			printf_uart("ok");
+			step_need = adcVal * 200 / 4036;
+			char ste_buff_need[50];
+			int length1 = snprintf(ste_buff_need, sizeof(ste_buff_need),
+					"step_need_value: %lu \r\n", step_need);
+			HAL_UART_Transmit(&huart1, (uint8_t*) ste_buff_need, length1, 1000);
+			HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+		} else {
+			printf_uart("Chay vao else \n");
+			step_new = adcVal * 200 / 4036;
+		}
+
+		if (step_curr > step_new) {
+			printf_uart("bi dao");
+			step_need = step_curr - step_new;
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
+			HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+		} else if (step_curr < step_new) {
+			printf_uart("xoay tiep");
+			step_need = step_new - step_curr;
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
+			HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
+		} else {
+			// vì timer dừng sẵn nên đã kh quay -> kh cần disable
+//		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+		}
+		lastAdcVal = adcVal;
+
+//	  HAL_Delay(1000);
+//	  HAL_ADC_Start_IT(&hadc1);
+	}
+}
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM1) {
 		// xử lí count
 		step_run++;
+//		printf_uart("Chay vao PWM \n");
 		if (step_run >= step_need) {
 			printf_uart("ok3");
 			if (step_curr == 0) {
@@ -498,10 +506,12 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
 						step_curr);
 				HAL_UART_Transmit(&huart1, (uint8_t*) buffer_step_curr, length1,
 						1000);
-			}
-			else step_curr = step_new;
-			HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_1);
+			} else{
+				step_curr = step_new;}
 			step_run = 0;
+			HAL_TIM_PWM_Stop_IT(&htim1, TIM_CHANNEL_1);
+			printf_uart("Chay toi day \n");
+			HAL_ADC_Start_IT(&hadc1);
 		}
 	}
 }
