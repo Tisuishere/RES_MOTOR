@@ -481,13 +481,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
 			HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_1);
 		} else {
+			 HAL_ADC_Start_IT(&hadc1); // gọi lại ADC
 			// vì timer dừng sẵn nên đã kh quay -> kh cần disable
 //		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 		}
 		lastAdcVal = adcVal;
 
 //	  HAL_Delay(1000);
-//	  HAL_ADC_Start_IT(&hadc1);
+
 	}
 }
 
@@ -497,7 +498,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
 		step_run++;
 //		printf_uart("Chay vao PWM \n");
 		if (step_run >= step_need) {
-			printf_uart("ok3");
+			printf_uart("Chay het step can \n");
 			if (step_curr == 0) {
 				step_curr = step_need;
 				char buffer_step_curr[50];

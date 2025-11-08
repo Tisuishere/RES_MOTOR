@@ -7,5 +7,5 @@
 ../Core/Src/main.c:357:6:printf_uart	1
 ../Core/Src/main.c:360:6:read_ADC	2
 ../Core/Src/main.c:448:6:HAL_ADC_ConvCpltCallback	5
-../Core/Src/main.c:494:6:HAL_TIM_PWM_PulseFinishedCallback	4
-../Core/Src/main.c:524:6:Error_Handler	1
+../Core/Src/main.c:495:6:HAL_TIM_PWM_PulseFinishedCallback	4
+../Core/Src/main.c:525:6:Error_Handler	1
